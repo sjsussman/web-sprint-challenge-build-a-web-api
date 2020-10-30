@@ -15,24 +15,93 @@ Action.get()
     })
 })
 });
+
+router.get('/:id', validateActionId, (req, res) => {
+res.status(200).json(req.action)
+    });
   
-router.post('/:id', (req, res) => {
+router.post('/', validateAction, (req, res) => {
+    Action.insert(req.body)
+    .then(addedAction => {
+        res.status(200).json({
+            message: 'Successfully added action!'
+        })
+    })
+    .catch(error => {
+        console.log(error)
+        res.status(400).json({
+            message: "There was an error adding this action, check to make sure Project ID is valid"
+        })
+    })
 
 });
   
 router.delete('/:id', (req, res) => {
-
+    Action.remove(req.params.id)
+    .then(deletedAction => {
+        console.log(deletedAction)
+        res.status(200).json({
+            message: 'Successfully deleted action',
+        })
+    })
 });
   
-router.put('/:id', (req, res) => {
-
+router.put('/:id', validateActionId, validateAction, (req, res) => {
+    Action.update(req.params.id, req.body)
+    .then(updatedAction => {
+        console.log(updatedAction)
+        res.status(200).json({
+            message: 'Successfully updated action',
+            Update: req.body
+        })
+    })
 });
   
 // custom middleware
-  
-function validatePostId(req, res, next) {
 
-}
+function validateActionId(req, res, next) {
+    // do your magic!
+    const { id } = req.params;
+    Action.get(id)
+    .then(action => {
+      console.log('This is what your CRUD operation is returning:', action)
+      if(action){
+        req.action = action
+        next()
+      } else {
+        res.status(404).json({
+          message: `Error loading the action with id ${id}`
+        })
+      }
+    })  
+  }
+  
+function validateAction(req, res, next) {
+    // do your magic!
+    if (Object.keys(req.body).length === 0) {
+      res.status(400).json({
+        message: 'missing action data'
+      })
+    } else if (!req.body.project_id) {
+      res.status(400).json({
+        message: 'missing required project ID'
+      })
+    } else if (!req.body.description) {
+        res.status(400).json({
+          message: 'missing required description field'
+        })
+      }  else if (!req.body.notes) {
+        res.status(400).json({
+            message: 'missing required notes'
+        })
+      } else if (!req.body.completed) {
+        res.status(400).json({
+          message: 'missing completed status'
+        })
+      } else {
+      next()
+      }
+    }
 
 module.exports = router;
   
